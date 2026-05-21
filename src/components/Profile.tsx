@@ -41,15 +41,15 @@ export function Profile({ user }: ProfileProps) {
         )}
 
         <div className="flex justify-around sm:justify-start sm:gap-8 w-full text-center sm:text-left border-y border-gray-200 dark:border-[#30363d] py-4 mt-4 transition-colors">
-          <div className="px-2">
+          <div className="flex-1 sm:flex-none">
             <p className="text-gray-900 dark:text-white font-bold">{user.followers}</p>
             <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 mt-0.5">팔로워</p>
           </div>
-          <div className="px-2 border-l border-gray-200 dark:border-[#30363d] pl-8 sm:border-none sm:pl-0 transition-colors">
+          <div className="flex-1 sm:flex-none border-l border-gray-200 dark:border-[#30363d] sm:border-none transition-colors">
             <p className="text-gray-900 dark:text-white font-bold">{user.following}</p>
             <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 mt-0.5">팔로잉</p>
           </div>
-          <div className="px-2 border-l border-gray-200 dark:border-[#30363d] pl-8 sm:border-none sm:pl-0 transition-colors">
+          <div className="flex-1 sm:flex-none border-l border-gray-200 dark:border-[#30363d] sm:border-none transition-colors">
             <p className="text-gray-900 dark:text-white font-bold">{user.public_repos}</p>
             <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 mt-0.5">저장소</p>
           </div>

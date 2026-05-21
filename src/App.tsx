@@ -53,6 +53,12 @@ export default function App() {
     }
   };
 
+  const handleReset = () => {
+    setUser(null);
+    setRepos([]);
+    setError(null);
+  };
+
   const topRepos = useMemo(() => {
     return [...repos].sort((a, b) => {
       if (b.stargazers_count !== a.stargazers_count) {
@@ -66,6 +72,7 @@ export default function App() {
     <div className={`min-h-screen font-sans transition-colors bg-white dark:bg-[#010409] text-gray-900 dark:text-[#c9d1d9]`}>
       <Header 
         onSearch={handleSearch} 
+        onReset={handleReset}
         isDarkMode={isDarkMode} 
         toggleDarkMode={toggleDarkMode}
         isLoading={isLoading}
@@ -107,8 +114,8 @@ export default function App() {
               <Profile user={user} />
             </section>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              <section className="lg:col-span-2 flex flex-col">
+            <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+              <section className="w-full lg:w-2/3 flex flex-col">
                 <div className="flex items-center justify-between mb-4 shrink-0">
                   <h3 className="font-bold text-gray-900 dark:text-white">Top Repositories</h3>
                   <div className="flex items-center gap-3">
@@ -131,7 +138,7 @@ export default function App() {
                 </div>
               </section>
 
-              <section className="lg:col-span-1 flex flex-col">
+              <section className="w-full lg:w-1/3 flex flex-col">
                 <LanguageChart repos={repos} />
               </section>
             </div>

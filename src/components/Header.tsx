@@ -3,12 +3,13 @@ import { useState } from 'react';
 
 interface HeaderProps {
   onSearch: (username: string) => void;
+  onReset: () => void;
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   isLoading: boolean;
 }
 
-export function Header({ onSearch, isDarkMode, toggleDarkMode, isLoading }: HeaderProps) {
+export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading }: HeaderProps) {
   const [searchInput, setSearchInput] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -18,10 +19,23 @@ export function Header({ onSearch, isDarkMode, toggleDarkMode, isLoading }: Head
     }
   };
 
+  const handleLogoClick = () => {
+    setSearchInput('');
+    onReset();
+  };
+
   return (
     <header className="sticky top-0 z-10 bg-gray-50 dark:bg-[#0d1117] border-b border-gray-200 dark:border-[#30363d] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity"
+          onClick={handleLogoClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') handleLogoClick();
+          }}
+        >
           <Github className="w-8 h-8 text-gray-900 dark:text-white" />
           <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white hidden sm:block">
             Git-Analyze
