@@ -5,6 +5,7 @@ import { RepoList } from './components/RepoList';
 import { LanguageChart } from './components/LanguageChart';
 import { RepoModal } from './components/RepoModal';
 import { FamousUsers } from './components/FamousUsers';
+import { BookmarkedUsers } from './components/BookmarkedUsers';
 import { fetchGitHubUser, fetchGitHubRepos } from './lib/github';
 import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
+  const [currentView, setCurrentView] = useState<'home' | 'bookmarks'>('home');
 
   // Initialize theme based on system preference
   useEffect(() => {
@@ -37,6 +39,7 @@ export default function App() {
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   const handleSearch = async (username: string) => {
+    setCurrentView('home');
     setIsLoading(true);
     setError(null);
     setHeaderSearchTerm(username); // Sync the search input
@@ -61,6 +64,7 @@ export default function App() {
     setRepos([]);
     setError(null);
     setHeaderSearchTerm('');
+    setCurrentView('home');
   };
 
   const topRepos = useMemo(() => {
@@ -82,9 +86,14 @@ export default function App() {
         isLoading={isLoading}
         searchTerm={headerSearchTerm}
         setSearchTerm={setHeaderSearchTerm}
+        onViewChange={setCurrentView}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {currentView === 'bookmarks' ? (
+          <BookmarkedUsers onSelectUser={handleSearch} />
+        ) : (
+          <>
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-slate-500">
             <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#2ea043]" />
@@ -156,6 +165,8 @@ export default function App() {
           onClose={() => setIsModalOpen(false)} 
           repos={repos} 
         />
+          </>
+        )}
       </main>
     </div>
   );

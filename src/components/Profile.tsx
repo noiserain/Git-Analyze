@@ -1,11 +1,51 @@
+import { useState, useEffect } from 'react';
 import { GitHubUser } from '../types';
-import { MapPin, Link as LinkIcon, Users, UserPlus, Building, Calendar } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Building, Calendar, Bookmark } from 'lucide-react';
 
 interface ProfileProps {
   user: GitHubUser;
 }
 
 export function Profile({ user }: ProfileProps) {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('github-bookmarks');
+    if (saved) {
+      try {
+        const bookmarks = JSON.parse(saved);
+        setIsBookmarked(bookmarks.some((b: GitHubUser) => b.login === user.login));
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+  }, [user.login]);
+
+  const toggleBookmark = () => {
+    const saved = localStorage.getItem('github-bookmarks');
+    let bookmarks = [];
+    if (saved) {
+      try {
+        bookmarks = JSON.parse(saved);
+      } catch (e) {
+        bookmarks = [];
+      }
+    }
+    
+    if (isBookmarked) {
+      bookmarks = bookmarks.filter((b: GitHubUser) => b.login !== user.login);
+    } else {
+      bookmarks.push({
+        login: user.login,
+        name: user.name,
+        avatar_url: user.avatar_url
+      });
+    }
+    
+    localStorage.setItem('github-bookmarks', JSON.stringify(bookmarks));
+    setIsBookmarked(!isBookmarked);
+  };
+
   const joinDate = new Date(user.created_at).toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: 'long',
@@ -13,13 +53,21 @@ export function Profile({ user }: ProfileProps) {
   });
 
   return (
-    <div className="bg-gray-50 dark:bg-[#0d1117] transition-colors rounded-md border border-gray-200 dark:border-[#30363d] p-6 sm:p-8 flex flex-col items-center sm:items-start sm:flex-row gap-6 sm:gap-8">
+    <div className="bg-gray-50 dark:bg-[#0d1117] transition-colors rounded-md border border-gray-200 dark:border-[#30363d] p-6 sm:p-8 flex flex-col items-center sm:items-start sm:flex-row gap-6 sm:gap-8 relative">
+      <button
+        onClick={toggleBookmark}
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#1b2129] text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white transition-colors group z-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+      >
+        <Bookmark className={`w-5 h-5 transition-colors ${isBookmarked ? 'fill-blue-500 text-blue-500 group-hover:text-blue-600 dark:group-hover:text-blue-400' : ''}`} />
+      </button>
+
       <img
         src={user.avatar_url}
         alt={`${user.login} profile`}
         className="w-32 h-32 rounded-full border-2 border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#161b22] object-cover transition-colors"
       />
-      <div className="flex-1 space-y-4 text-center sm:text-left w-full">
+      <div className="flex-1 space-y-4 text-center sm:text-left w-full sm:pr-20">
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {user.name || user.login}
