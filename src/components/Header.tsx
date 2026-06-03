@@ -7,20 +7,20 @@ interface HeaderProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   isLoading: boolean;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
 }
 
-export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading }: HeaderProps) {
-  const [searchInput, setSearchInput] = useState('');
-
+export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading, searchTerm, setSearchTerm }: HeaderProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      onSearch(searchInput.trim());
+    if (searchTerm.trim()) {
+      onSearch(searchTerm.trim());
     }
   };
 
   const handleLogoClick = () => {
-    setSearchInput('');
+    setSearchTerm('');
     onReset();
   };
 
@@ -49,8 +49,8 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
             </div>
             <input
               type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search GitHub Username..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[#30363d] rounded-md leading-5 bg-white dark:bg-[#010409] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm transition-all"
               disabled={isLoading}

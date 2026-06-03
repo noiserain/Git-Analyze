@@ -4,6 +4,7 @@ import { Profile } from './components/Profile';
 import { RepoList } from './components/RepoList';
 import { LanguageChart } from './components/LanguageChart';
 import { RepoModal } from './components/RepoModal';
+import { FamousUsers } from './components/FamousUsers';
 import { fetchGitHubUser, fetchGitHubRepos } from './lib/github';
 import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
@@ -15,6 +16,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [headerSearchTerm, setHeaderSearchTerm] = useState('');
 
   // Initialize theme based on system preference
   useEffect(() => {
@@ -37,6 +39,7 @@ export default function App() {
   const handleSearch = async (username: string) => {
     setIsLoading(true);
     setError(null);
+    setHeaderSearchTerm(username); // Sync the search input
     try {
       const [fetchedUser, fetchedRepos] = await Promise.all([
         fetchGitHubUser(username),
@@ -57,6 +60,7 @@ export default function App() {
     setUser(null);
     setRepos([]);
     setError(null);
+    setHeaderSearchTerm('');
   };
 
   const topRepos = useMemo(() => {
@@ -76,6 +80,8 @@ export default function App() {
         isDarkMode={isDarkMode} 
         toggleDarkMode={toggleDarkMode}
         isLoading={isLoading}
+        searchTerm={headerSearchTerm}
+        setSearchTerm={setHeaderSearchTerm}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -99,9 +105,10 @@ export default function App() {
               <Github className="w-12 h-12 text-gray-400 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors relative z-10" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">GitHub 유저를 검색해보세요!</h2>
-            <p className="text-gray-500 dark:text-slate-400 max-w-md text-sm leading-relaxed">
+            <p className="text-gray-500 dark:text-slate-400 max-w-md text-sm leading-relaxed mb-4">
               상단 검색창에 확인하고 싶은 개발자의 깃허브 아이디를 입력하시면, <br/>활동 데이터와 주력 언어를 분석해드립니다.
             </p>
+            <FamousUsers onUserClick={handleSearch} />
           </div>
         )}
 
