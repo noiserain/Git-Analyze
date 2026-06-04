@@ -1,8 +1,5 @@
-import { Moon, Sun, Search, Github, Menu, X, Bookmark, Loader2 } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
-import { searchGitHubUsers } from '../lib/github';
-import { GitHubUser } from '../types';
-import { useDebounce } from 'use-debounce';
+import { Moon, Sun, Search, Github, Menu, X, Bookmark } from 'lucide-react';
+import { useState } from 'react';
 
 interface HeaderProps {
   onSearch: (username: string) => void;
@@ -17,40 +14,6 @@ interface HeaderProps {
 
 export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading, searchTerm, setSearchTerm, onViewChange }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<Partial<GitHubUser>[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [debouncedSearch] = useDebounce(searchTerm, 300);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!debouncedSearch.trim()) {
-        setSuggestions([]);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const results = await searchGitHubUsers(debouncedSearch.trim());
-        setSuggestions(results);
-      } catch (err) {
-        setSuggestions([]);
-      } finally {
-        setIsSearching(false);
-      }
-    };
-    fetchSuggestions();
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +47,7 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 max-w-lg mx-4">
-          <div className="relative group" ref={dropdownRef}>
+          <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-gray-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
             </div>
@@ -92,47 +55,10 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setShowSuggestions(true)}
               placeholder="Search GitHub Username..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[#30363d] rounded-md leading-5 bg-white dark:bg-[#010409] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm transition-all"
               disabled={isLoading}
             />
-            {showSuggestions && searchTerm.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-[#30363d] rounded-md shadow-lg overflow-hidden z-50">
-                {isSearching ? (
-                  <div className="flex items-center justify-center p-4 text-gray-500 dark:text-slate-400">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  </div>
-                ) : suggestions.length > 0 ? (
-                  <ul className="max-h-60 overflow-y-auto">
-                    {suggestions.map((user) => (
-                      <li key={user.login}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchTerm(user.login || '');
-                            onSearch(user.login || '');
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 dark:hover:bg-[#161b22] text-left transition-colors focus:outline-none focus:bg-gray-100 dark:focus:bg-[#161b22]"
-                        >
-                          {user.avatar_url && (
-                            <img src={user.avatar_url} alt="" className="w-6 h-6 rounded-full" />
-                          )}
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.login}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="p-4 text-sm text-gray-500 dark:text-slate-400 text-center">
-                    검색 결과가 없습니다.
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </form>
 

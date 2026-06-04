@@ -2,16 +2,6 @@ import { GitHubUser, GitHubRepo } from '../types';
 
 const GITHUB_API_URL = 'https://api.github.com';
 
-export async function searchGitHubUsers(query: string): Promise<Partial<GitHubUser>[]> {
-  if (!query) return [];
-  const response = await fetch(`${GITHUB_API_URL}/search/users?q=${encodeURIComponent(query)}&per_page=5`);
-  if (!response.ok) {
-    throw new Error('유저 검색에 실패했습니다.');
-  }
-  const data = await response.json();
-  return data.items;
-}
-
 export async function fetchGitHubUser(username: string): Promise<GitHubUser> {
   const response = await fetch(`${GITHUB_API_URL}/users/${username}`);
   if (!response.ok) {

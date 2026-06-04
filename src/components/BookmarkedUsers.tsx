@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { GitHubUser } from '../types';
 import { Bookmark, UserX, GripVertical } from 'lucide-react';
 
