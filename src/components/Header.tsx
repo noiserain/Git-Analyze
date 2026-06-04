@@ -1,5 +1,5 @@
 import { Moon, Sun, Search, Github, Menu, X, Bookmark } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface HeaderProps {
   onSearch: (username: string) => void;
