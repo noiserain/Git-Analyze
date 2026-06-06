@@ -32,54 +32,28 @@ async function startServer() {
     }
   }
 
-  app.get('/api/bookmarks', async (req, res) => {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'No token' });
+  app.get('/api/bookmarks/:username', async (req, res) => {
     try {
-      const resp = await fetch('https://api.github.com/user', { 
-        headers: { 
-          'Authorization': token,
-          'User-Agent': 'React-App',
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      if (!resp.ok) {
-         const t = await resp.text();
-         throw new Error(`Github auth failed: ${resp.status} - ${t}`);
-      }
-      const user = await resp.json();
+      const username = req.params.username;
       const db = await readBookmarks();
-      res.json(db[user.login] || []);
+      res.json(db[username] || []);
     } catch (e: any) {
       console.error('bookmarks GET err:', e);
-      res.status(500).json({ error: e.message || 'Invalid token' });
+      res.status(500).json({ error: e.message || 'Internal error' });
     }
   });
 
-  app.post('/api/bookmarks', async (req, res) => {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'No token' });
+  app.post('/api/bookmarks/:username', async (req, res) => {
     try {
-      const resp = await fetch('https://api.github.com/user', { 
-        headers: { 
-          'Authorization': token,
-          'User-Agent': 'React-App',
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      if (!resp.ok) {
-         const t = await resp.text();
-         throw new Error(`Github auth failed: ${resp.status} - ${t}`);
-      }
-      const user = await resp.json();
+      const username = req.params.username;
       const { bookmarks } = req.body;
       const db = await readBookmarks();
-      db[user.login] = bookmarks || [];
+      db[username] = bookmarks || [];
       await writeBookmarks(db);
       res.json({ success: true });
     } catch (e: any) {
       console.error('bookmarks POST err:', e);
-      res.status(500).json({ error: e.message || 'Invalid token' });
+      res.status(500).json({ error: e.message || 'Internal error' });
     }
   });
   const PORT = 3000;

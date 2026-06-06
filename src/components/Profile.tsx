@@ -6,33 +6,34 @@ import { fetchBookmarks, updateBookmarks } from '../lib/github';
 interface ProfileProps {
   user: GitHubUser;
   token?: string | null;
+  currentUser?: GitHubUser | null;
   onRequireLogin?: () => void;
 }
 
-export function Profile({ user, token, onRequireLogin }: ProfileProps) {
+export function Profile({ user, token, currentUser, onRequireLogin }: ProfileProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !currentUser) {
       setIsBookmarked(false);
       return;
     }
-    fetchBookmarks(token)
+    fetchBookmarks(token, currentUser.login)
       .then(bookmarks => {
         setIsBookmarked(bookmarks.some((b: GitHubUser) => b.login === user.login));
       })
       .catch(() => {});
-  }, [user.login, token]);
+  }, [user.login, token, currentUser]);
 
   const toggleBookmark = async () => {
-    if (!token) {
+    if (!token || !currentUser) {
       alert('해당 기능은 로그인이 필요해요!');
       onRequireLogin?.();
       return;
     }
 
     try {
-      const bookmarks = await fetchBookmarks(token);
+      const bookmarks = await fetchBookmarks(token, currentUser.login);
       let newBookmarks = [];
       
       if (isBookmarked) {
@@ -48,7 +49,7 @@ export function Profile({ user, token, onRequireLogin }: ProfileProps) {
         ];
       }
       
-      await updateBookmarks(token, newBookmarks);
+      await updateBookmarks(token, currentUser.login, newBookmarks);
       setIsBookmarked(!isBookmarked);
     } catch (e: any) {
       alert(`북마크 업데이트 중 오류가 발생했습니다: ${e.message}`);

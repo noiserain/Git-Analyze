@@ -11,19 +11,25 @@ export async function fetchCurrentUser(token: string): Promise<GitHubUser> {
   return response.json();
 }
 
-export async function fetchBookmarks(token: string) {
-  const res = await fetch('/api/bookmarks', { headers: { 'Authorization': `Bearer ${token}` }});
-  if (!res.ok) throw new Error();
+export async function fetchBookmarks(token: string, username: string) {
+  const res = await fetch(`/api/bookmarks/${username}`, { headers: { 'Authorization': `Bearer ${token}` }});
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(errText);
+  }
   return res.json();
 }
 
-export async function updateBookmarks(token: string, bookmarks: any[]) {
-  const res = await fetch('/api/bookmarks', {
+export async function updateBookmarks(token: string, username: string, bookmarks: any[]) {
+  const res = await fetch(`/api/bookmarks/${username}`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ bookmarks })
   });
-  if (!res.ok) throw new Error();
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(errText);
+  }
   return res.json();
 }
 

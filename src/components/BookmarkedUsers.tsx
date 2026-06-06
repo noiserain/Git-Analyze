@@ -6,24 +6,25 @@ import { fetchBookmarks, updateBookmarks } from '../lib/github';
 interface BookmarkedUsersProps {
   onSelectUser: (username: string) => void;
   token?: string | null;
+  currentUser?: GitHubUser | null;
 }
 
-export function BookmarkedUsers({ onSelectUser, token }: BookmarkedUsersProps) {
+export function BookmarkedUsers({ onSelectUser, token, currentUser }: BookmarkedUsersProps) {
   const [bookmarks, setBookmarks] = useState<Partial<GitHubUser>[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadBookmarks();
-  }, [token]);
+  }, [token, currentUser]);
 
   const loadBookmarks = async () => {
-    if (!token) {
+    if (!token || !currentUser) {
       setBookmarks([]);
       return;
     }
     try {
-      const data = await fetchBookmarks(token);
+      const data = await fetchBookmarks(token, currentUser.login);
       setBookmarks(data);
     } catch (e) {
       setBookmarks([]);
@@ -32,11 +33,11 @@ export function BookmarkedUsers({ onSelectUser, token }: BookmarkedUsersProps) {
 
   const removeBookmark = async (e: React.MouseEvent, login: string) => {
     e.stopPropagation();
-    if (!token) return;
+    if (!token || !currentUser) return;
     const updated = bookmarks.filter(b => b.login !== login);
     setBookmarks(updated);
     try {
-      await updateBookmarks(token, updated);
+      await updateBookmarks(token, currentUser.login, updated);
     } catch (e) {
       alert('북마크 삭제 중 오류가 발생했습니다.');
     }
@@ -58,9 +59,9 @@ export function BookmarkedUsers({ onSelectUser, token }: BookmarkedUsersProps) {
       newBookmarks.splice(dragOverItemIndex, 0, draggedItem);
       
       setBookmarks(newBookmarks);
-      if (token) {
+      if (token && currentUser) {
         try {
-          await updateBookmarks(token, newBookmarks);
+          await updateBookmarks(token, currentUser.login, newBookmarks);
         } catch (e) {
            // ignore
         }
