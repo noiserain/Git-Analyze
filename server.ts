@@ -3,6 +3,8 @@ import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
+import fs from "fs/promises";
+import os from "os";
 
 dotenv.config();
 
@@ -11,11 +13,10 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  const BOOKMARKS_FILE = path.join(process.cwd(), 'bookmarks.json');
+  const BOOKMARKS_FILE = path.join(os.tmpdir(), 'bookmarks.json');
   
   async function readBookmarks() {
     try {
-      const fs = await import('fs/promises');
       const data = await fs.readFile(BOOKMARKS_FILE, 'utf-8');
       return JSON.parse(data);
     } catch (e) {
@@ -25,22 +26,33 @@ async function startServer() {
   
   async function writeBookmarks(db: any) {
     try {
-      const fs = await import('fs/promises');
       await fs.writeFile(BOOKMARKS_FILE, JSON.stringify(db, null, 2));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to write bookmarks:', e);
+    }
   }
 
   app.get('/api/bookmarks', async (req, res) => {
     const token = req.headers.authorization;
     if (!token) return res.status(401).json({ error: 'No token' });
     try {
-      const resp = await fetch('https://api.github.com/user', { headers: { 'Authorization': token }});
-      if (!resp.ok) throw new Error();
+      const resp = await fetch('https://api.github.com/user', { 
+        headers: { 
+          'Authorization': token,
+          'User-Agent': 'React-App',
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (!resp.ok) {
+         const t = await resp.text();
+         throw new Error(`Github auth failed: ${resp.status} - ${t}`);
+      }
       const user = await resp.json();
       const db = await readBookmarks();
       res.json(db[user.login] || []);
-    } catch (e) {
-      res.status(401).json({ error: 'Invalid token' });
+    } catch (e: any) {
+      console.error('bookmarks GET err:', e);
+      res.status(500).json({ error: e.message || 'Invalid token' });
     }
   });
 
@@ -48,16 +60,26 @@ async function startServer() {
     const token = req.headers.authorization;
     if (!token) return res.status(401).json({ error: 'No token' });
     try {
-      const resp = await fetch('https://api.github.com/user', { headers: { 'Authorization': token }});
-      if (!resp.ok) throw new Error();
+      const resp = await fetch('https://api.github.com/user', { 
+        headers: { 
+          'Authorization': token,
+          'User-Agent': 'React-App',
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (!resp.ok) {
+         const t = await resp.text();
+         throw new Error(`Github auth failed: ${resp.status} - ${t}`);
+      }
       const user = await resp.json();
       const { bookmarks } = req.body;
       const db = await readBookmarks();
       db[user.login] = bookmarks || [];
       await writeBookmarks(db);
       res.json({ success: true });
-    } catch (e) {
-      res.status(401).json({ error: 'Invalid token' });
+    } catch (e: any) {
+      console.error('bookmarks POST err:', e);
+      res.status(500).json({ error: e.message || 'Invalid token' });
     }
   });
   const PORT = 3000;
@@ -66,7 +88,10 @@ async function startServer() {
   
   app.get('/api/github/users/:username', async (req, res) => {
     try {
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'User-Agent': 'React-App',
+        'Accept': 'application/vnd.github.v3+json'
+      };
       if (req.headers.authorization) {
         headers['Authorization'] = req.headers.authorization;
       } else if (process.env.GITHUB_TOKEN) {
@@ -95,7 +120,10 @@ async function startServer() {
 
   app.get('/api/github/users/:username/repos', async (req, res) => {
     try {
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'User-Agent': 'React-App',
+        'Accept': 'application/vnd.github.v3+json'
+      };
       if (req.headers.authorization) {
         headers['Authorization'] = req.headers.authorization;
       } else if (process.env.GITHUB_TOKEN) {

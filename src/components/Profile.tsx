@@ -50,8 +50,8 @@ export function Profile({ user, token, onRequireLogin }: ProfileProps) {
       
       await updateBookmarks(token, newBookmarks);
       setIsBookmarked(!isBookmarked);
-    } catch (e) {
-      alert('북마크 업데이트 중 오류가 발생했습니다.');
+    } catch (e: any) {
+      alert(`북마크 업데이트 중 오류가 발생했습니다: ${e.message}`);
     }
   };
 
