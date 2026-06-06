@@ -17,7 +17,7 @@ async function startServer() {
     try {
       const headers: Record<string, string> = {};
       if (process.env.GITHUB_TOKEN) {
-        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+        headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
       }
       
       const { username } = req.params;
@@ -44,7 +44,7 @@ async function startServer() {
     try {
       const headers: Record<string, string> = {};
       if (process.env.GITHUB_TOKEN) {
-        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+        headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
       }
       
       const { username } = req.params;
