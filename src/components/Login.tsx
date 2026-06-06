@@ -27,6 +27,15 @@ export function Login({ onLoginSuccess }: LoginProps) {
   const handleConnect = async () => {
     setIsLoggingIn(true);
     setError(null);
+    // 모바일 브라우저의 팝업 차단을 방지하기 위해 클릭 즉시 빈 창을 먼저 엽니다.
+    const authWindow = window.open('', 'oauth_popup', 'width=600,height=700');
+
+    if (!authWindow) {
+      setError('팝업이 차단되었습니다. 모바일 기기나 브라우저의 팝업 차단을 해제하고 다시 시도해주세요.');
+      setIsLoggingIn(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/url');
       if (!response.ok) {
@@ -34,18 +43,11 @@ export function Login({ onLoginSuccess }: LoginProps) {
       }
       const { url } = await response.json();
 
-      const authWindow = window.open(
-        url,
-        'oauth_popup',
-        'width=600,height=700'
-      );
-
-      if (!authWindow) {
-        setError('팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
-        setIsLoggingIn(false);
-      }
+      // 가져온 URL로 리다이렉트
+      authWindow.location.href = url;
     } catch (err) {
       console.error('OAuth error:', err);
+      authWindow.close();
       setError('로그인 진행 중 오류가 발생했습니다.');
       setIsLoggingIn(false);
     }
