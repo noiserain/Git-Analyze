@@ -1,12 +1,14 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import cors from "cors";
 import { createServer as createViteServer } from "vite";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
+  app.use(cors());
   const PORT = 3000;
 
   const GITHUB_API_URL = 'https://api.github.com';

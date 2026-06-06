@@ -47,16 +47,21 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 max-w-lg mx-4">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-            </div>
+          <div className="relative group flex items-center">
+            <button 
+              type="submit" 
+              className="absolute inset-y-0 left-0 pl-3 flex items-center justify-center z-10"
+              aria-label="Search form submit"
+            >
+              <Search className="h-4 w-4 text-gray-400 dark:text-slate-500 hover:text-blue-500 group-focus-within:text-blue-500 transition-colors" />
+            </button>
             <input
-              type="text"
+              type="search"
+              enterKeyHint="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search GitHub Username..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[#30363d] rounded-md leading-5 bg-white dark:bg-[#010409] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm transition-all"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-[#30363d] rounded-md leading-5 bg-white dark:bg-[#010409] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm transition-all shadow-sm"
               disabled={isLoading}
             />
           </div>
