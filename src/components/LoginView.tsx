@@ -4,12 +4,15 @@ export function LoginView() {
   const handleLogin = async () => {
     try {
       const response = await fetch('/api/auth/url');
-      if (!response.ok) throw new Error('Failed to fetch auth url');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Failed to fetch auth url');
+      }
       const { url } = await response.json();
       window.location.href = url; // Redirect to the URL
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("로그인 URL을 가져오는데 실패했습니다.");
+      alert(`로그인 준비 중 오류가 발생했습니다: ${e.message}`);
     }
   };
 

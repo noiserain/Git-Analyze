@@ -9,6 +9,57 @@ dotenv.config();
 async function startServer() {
   const app = express();
   app.use(cors());
+  app.use(express.json());
+
+  const BOOKMARKS_FILE = path.join(process.cwd(), 'bookmarks.json');
+  
+  async function readBookmarks() {
+    try {
+      const fs = await import('fs/promises');
+      const data = await fs.readFile(BOOKMARKS_FILE, 'utf-8');
+      return JSON.parse(data);
+    } catch (e) {
+      return {};
+    }
+  }
+  
+  async function writeBookmarks(db: any) {
+    try {
+      const fs = await import('fs/promises');
+      await fs.writeFile(BOOKMARKS_FILE, JSON.stringify(db, null, 2));
+    } catch (e) {}
+  }
+
+  app.get('/api/bookmarks', async (req, res) => {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    try {
+      const resp = await fetch('https://api.github.com/user', { headers: { 'Authorization': token }});
+      if (!resp.ok) throw new Error();
+      const user = await resp.json();
+      const db = await readBookmarks();
+      res.json(db[user.login] || []);
+    } catch (e) {
+      res.status(401).json({ error: 'Invalid token' });
+    }
+  });
+
+  app.post('/api/bookmarks', async (req, res) => {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'No token' });
+    try {
+      const resp = await fetch('https://api.github.com/user', { headers: { 'Authorization': token }});
+      if (!resp.ok) throw new Error();
+      const user = await resp.json();
+      const { bookmarks } = req.body;
+      const db = await readBookmarks();
+      db[user.login] = bookmarks || [];
+      await writeBookmarks(db);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(401).json({ error: 'Invalid token' });
+    }
+  });
   const PORT = 3000;
 
   const GITHUB_API_URL = 'https://api.github.com';
@@ -76,8 +127,14 @@ async function startServer() {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const redirectUri = `${protocol}://${host}/api/auth/callback`;
   
+    const clientId = process.env.GITHUB_CLIENT_ID?.trim();
+
+    if (!clientId || clientId === 'dummy_client_id_for_testing') {
+      return res.status(500).json({ error: "서버 환경 변수 오류: GITHUB_CLIENT_ID가 설정되지 않았습니다." });
+    }
+
     const params = new URLSearchParams({
-      client_id: process.env.GITHUB_CLIENT_ID || 'dummy_client_id_for_testing',
+      client_id: clientId,
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'repo user',

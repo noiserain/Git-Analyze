@@ -12,9 +12,10 @@ interface HeaderProps {
   onViewChange: (view: 'home' | 'bookmarks' | 'login') => void;
   token?: string | null;
   setToken?: (token: string | null) => void;
+  currentUser?: any;
 }
 
-export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading, searchTerm, setSearchTerm, onViewChange, token, setToken }: HeaderProps) {
+export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading, searchTerm, setSearchTerm, onViewChange, token, setToken, currentUser }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -100,17 +101,23 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
           </button>
         </div>
         <div className="p-4 space-y-2">
-          {token ? (
-            <button
-              onClick={() => {
-                if (setToken) setToken(null);
-                setIsMenuOpen(false);
-              }}
-              className="flex items-center gap-3 w-full p-3 rounded-md bg-gray-200 dark:bg-[#21262d] hover:bg-gray-300 dark:hover:bg-[#30363d] text-gray-900 dark:text-white transition-colors text-sm font-bold shadow-sm"
-            >
-              <Github className="w-4 h-4 text-gray-900 dark:text-white" />
-              로그아웃
-            </button>
+          {token && currentUser ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-[#161b22] rounded-md">
+                <img src={currentUser.avatar_url} alt="Profile" className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700" />
+                <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{currentUser.login}</span>
+              </div>
+              <button
+                onClick={() => {
+                  if (setToken) setToken(null);
+                  setIsMenuOpen(false);
+                }}
+                className="flex items-center gap-3 w-full p-3 rounded-md bg-gray-200 dark:bg-[#21262d] hover:bg-gray-300 dark:hover:bg-[#30363d] text-gray-900 dark:text-white transition-colors text-sm font-bold shadow-sm"
+              >
+                <Github className="w-4 h-4 text-gray-900 dark:text-white" />
+                로그아웃
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => {

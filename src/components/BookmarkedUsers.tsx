@@ -1,36 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { GitHubUser } from '../types';
-import { Bookmark, UserX, GripVertical } from 'lucide-react';
+import { Bookmark, UserX, GripVertical, User } from 'lucide-react';
+import { fetchBookmarks, updateBookmarks } from '../lib/github';
 
 interface BookmarkedUsersProps {
   onSelectUser: (username: string) => void;
+  token?: string | null;
 }
 
-export function BookmarkedUsers({ onSelectUser }: BookmarkedUsersProps) {
+export function BookmarkedUsers({ onSelectUser, token }: BookmarkedUsersProps) {
   const [bookmarks, setBookmarks] = useState<Partial<GitHubUser>[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadBookmarks();
-  }, []);
+  }, [token]);
 
-  const loadBookmarks = () => {
-    const saved = localStorage.getItem('github-bookmarks');
-    if (saved) {
-      try {
-        setBookmarks(JSON.parse(saved));
-      } catch (e) {
-        setBookmarks([]);
-      }
+  const loadBookmarks = async () => {
+    if (!token) {
+      setBookmarks([]);
+      return;
+    }
+    try {
+      const data = await fetchBookmarks(token);
+      setBookmarks(data);
+    } catch (e) {
+      setBookmarks([]);
     }
   };
 
-  const removeBookmark = (e: React.MouseEvent, login: string) => {
+  const removeBookmark = async (e: React.MouseEvent, login: string) => {
     e.stopPropagation();
+    if (!token) return;
     const updated = bookmarks.filter(b => b.login !== login);
-    localStorage.setItem('github-bookmarks', JSON.stringify(updated));
     setBookmarks(updated);
+    try {
+      await updateBookmarks(token, updated);
+    } catch (e) {
+      alert('북마크 삭제 중 오류가 발생했습니다.');
+    }
   };
 
   const handleDragStart = (index: number) => {
@@ -41,7 +50,7 @@ export function BookmarkedUsers({ onSelectUser }: BookmarkedUsersProps) {
     setDragOverItemIndex(index);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = async () => {
     if (draggedItemIndex !== null && dragOverItemIndex !== null && draggedItemIndex !== dragOverItemIndex) {
       const newBookmarks = [...bookmarks];
       const draggedItem = newBookmarks[draggedItemIndex];
@@ -49,7 +58,13 @@ export function BookmarkedUsers({ onSelectUser }: BookmarkedUsersProps) {
       newBookmarks.splice(dragOverItemIndex, 0, draggedItem);
       
       setBookmarks(newBookmarks);
-      localStorage.setItem('github-bookmarks', JSON.stringify(newBookmarks));
+      if (token) {
+        try {
+          await updateBookmarks(token, newBookmarks);
+        } catch (e) {
+           // ignore
+        }
+      }
     }
     setDraggedItemIndex(null);
     setDragOverItemIndex(null);

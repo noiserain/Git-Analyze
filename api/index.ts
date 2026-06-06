@@ -71,8 +71,14 @@ app.get('/api/auth/url', (req, res) => {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const redirectUri = `${protocol}://${host}/api/auth/callback`;
 
+  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
+  
+  if (!clientId || clientId === 'dummy_client_id_for_testing') {
+    return res.status(500).json({ error: "환경 변수 설정 오류: GITHUB_CLIENT_ID가 비어있습니다. Vercel 환경 변수를 확인해주세요." });
+  }
+
   const params = new URLSearchParams({
-    client_id: process.env.GITHUB_CLIENT_ID || 'dummy_client_id_for_testing',
+    client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'repo user',

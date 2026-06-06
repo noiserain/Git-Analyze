@@ -7,7 +7,7 @@ import { RepoModal } from './components/RepoModal';
 import { FamousUsers } from './components/FamousUsers';
 import { BookmarkedUsers } from './components/BookmarkedUsers';
 import { LoginView } from './components/LoginView';
-import { fetchGitHubUser, fetchGitHubRepos } from './lib/github';
+import { fetchGitHubUser, fetchGitHubRepos, fetchCurrentUser } from './lib/github';
 import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
 
@@ -21,12 +21,20 @@ export default function App() {
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState<'home' | 'bookmarks' | 'login'>('home');
   const [token, setToken] = useState<string | null>(localStorage.getItem('github_token') || null);
+  const [currentUser, setCurrentUser] = useState<GitHubUser | null>(null);
 
   useEffect(() => {
     if (token) {
       localStorage.setItem('github_token', token);
+      fetchCurrentUser(token)
+        .then(setCurrentUser)
+        .catch(() => {
+          setToken(null);
+          setCurrentUser(null);
+        });
     } else {
       localStorage.removeItem('github_token');
+      setCurrentUser(null);
     }
   }, [token]);
 
@@ -109,11 +117,12 @@ export default function App() {
         onViewChange={setCurrentView}
         token={token}
         setToken={setToken}
+        currentUser={currentUser}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {currentView === 'bookmarks' ? (
-          <BookmarkedUsers onSelectUser={handleSearch} />
+          <BookmarkedUsers onSelectUser={handleSearch} token={token} />
         ) : currentView === 'login' ? (
           <LoginView />
         ) : (
@@ -151,7 +160,11 @@ export default function App() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Dashboard Overview</h1>
             </div>
             <section>
-              <Profile user={user} />
+              <Profile 
+                user={user} 
+                token={token} 
+                onRequireLogin={() => setCurrentView('login')} 
+              />
             </section>
             
             <div className="flex flex-col lg:flex-row gap-6 items-stretch">

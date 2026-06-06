@@ -2,6 +2,31 @@ import { GitHubUser, GitHubRepo } from '../types';
 
 const GITHUB_API_URL = '/api/github';
 
+export async function fetchCurrentUser(token: string): Promise<GitHubUser> {
+  const headers = { 'Authorization': `Bearer ${token}` };
+  const response = await fetch(`https://api.github.com/user`, { headers });
+  if (!response.ok) {
+    throw new Error('인증 오류');
+  }
+  return response.json();
+}
+
+export async function fetchBookmarks(token: string) {
+  const res = await fetch('/api/bookmarks', { headers: { 'Authorization': `Bearer ${token}` }});
+  if (!res.ok) throw new Error();
+  return res.json();
+}
+
+export async function updateBookmarks(token: string, bookmarks: any[]) {
+  const res = await fetch('/api/bookmarks', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bookmarks })
+  });
+  if (!res.ok) throw new Error();
+  return res.json();
+}
+
 export async function fetchGitHubUser(username: string, token?: string | null): Promise<GitHubUser> {
   const headers: Record<string, string> = {};
   if (token) {

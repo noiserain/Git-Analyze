@@ -1,49 +1,58 @@
 import { useState, useEffect } from 'react';
 import { GitHubUser } from '../types';
 import { MapPin, Link as LinkIcon, Building, Calendar, Bookmark } from 'lucide-react';
+import { fetchBookmarks, updateBookmarks } from '../lib/github';
 
 interface ProfileProps {
   user: GitHubUser;
+  token?: string | null;
+  onRequireLogin?: () => void;
 }
 
-export function Profile({ user }: ProfileProps) {
+export function Profile({ user, token, onRequireLogin }: ProfileProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('github-bookmarks');
-    if (saved) {
-      try {
-        const bookmarks = JSON.parse(saved);
+    if (!token) {
+      setIsBookmarked(false);
+      return;
+    }
+    fetchBookmarks(token)
+      .then(bookmarks => {
         setIsBookmarked(bookmarks.some((b: GitHubUser) => b.login === user.login));
-      } catch (e) {
-        // ignore parse error
-      }
-    }
-  }, [user.login]);
+      })
+      .catch(() => {});
+  }, [user.login, token]);
 
-  const toggleBookmark = () => {
-    const saved = localStorage.getItem('github-bookmarks');
-    let bookmarks = [];
-    if (saved) {
-      try {
-        bookmarks = JSON.parse(saved);
-      } catch (e) {
-        bookmarks = [];
+  const toggleBookmark = async () => {
+    if (!token) {
+      alert('해당 기능은 로그인이 필요해요!');
+      onRequireLogin?.();
+      return;
+    }
+
+    try {
+      const bookmarks = await fetchBookmarks(token);
+      let newBookmarks = [];
+      
+      if (isBookmarked) {
+        newBookmarks = bookmarks.filter((b: GitHubUser) => b.login !== user.login);
+      } else {
+        newBookmarks = [
+          ...bookmarks,
+          {
+            login: user.login,
+            name: user.name,
+            avatar_url: user.avatar_url,
+          },
+        ];
       }
+      
+      await updateBookmarks(token, newBookmarks);
+      setIsBookmarked(!isBookmarked);
+    } catch (e) {
+      alert('북마크 업데이트 중 오류가 발생했습니다.');
     }
-    
-    if (isBookmarked) {
-      bookmarks = bookmarks.filter((b: GitHubUser) => b.login !== user.login);
-    } else {
-      bookmarks.push({
-        login: user.login,
-        name: user.name,
-        avatar_url: user.avatar_url
-      });
-    }
-    
-    localStorage.setItem('github-bookmarks', JSON.stringify(bookmarks));
-    setIsBookmarked(!isBookmarked);
   };
 
   const joinDate = new Date(user.created_at).toLocaleDateString('ko-KR', {
