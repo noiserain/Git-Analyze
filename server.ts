@@ -19,8 +19,14 @@ async function startServer() {
   const GITHUB_API_URL = 'https://api.github.com';
   
   // OAuth Implementation
+  const getRedirectUri = (req: any) => {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers.host || `localhost:${PORT}`;
+    return `${protocol}://${host}/auth/callback`;
+  };
+
   app.get('/api/auth/url', (req, res) => {
-    const redirectUri = `${process.env.APP_URL || `http://localhost:${PORT}`}/auth/callback`;
+    const redirectUri = getRedirectUri(req);
     
     const params = new URLSearchParams({
       client_id: process.env.GITHUB_CLIENT_ID || '',
@@ -39,7 +45,7 @@ async function startServer() {
     }
 
     try {
-      const redirectUri = `${process.env.APP_URL || `http://localhost:${PORT}`}/auth/callback`;
+      const redirectUri = getRedirectUri(req);
       
       const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',
