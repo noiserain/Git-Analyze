@@ -15,12 +15,6 @@ export interface GitHubUser {
   created_at: string;
 }
 
-export interface AuthUser {
-  login: string;
-  name: string;
-  avatar_url: string;
-}
-
 export interface GitHubRepo {
   id: number;
   name: string;

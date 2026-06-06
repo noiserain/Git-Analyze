@@ -1,47 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { GitHubUser, AuthUser } from '../types';
+import { GitHubUser } from '../types';
 import { Bookmark, UserX, GripVertical } from 'lucide-react';
 
 interface BookmarkedUsersProps {
   onSelectUser: (username: string) => void;
-  user: AuthUser | null;
 }
 
-export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
+export function BookmarkedUsers({ onSelectUser }: BookmarkedUsersProps) {
   const [bookmarks, setBookmarks] = useState<Partial<GitHubUser>[]>([]);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadBookmarks();
-  }, [user]);
+  }, []);
 
-  const getHeaders = () => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  };
-
-  const loadBookmarks = async () => {
-    if (user) {
-      try {
-        const res = await fetch('/api/bookmarks', { headers: getHeaders() });
-        if (res.ok) {
-          const data = await res.json();
-          setBookmarks(data);
-          return;
-        }
-      } catch (e) {
-        console.error('Failed to load bookmarks from server');
-      }
-    }
-    
-    // Fallback or not logged in
+  const loadBookmarks = () => {
     const saved = localStorage.getItem('github-bookmarks');
     if (saved) {
       try {
@@ -49,25 +23,14 @@ export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
       } catch (e) {
         setBookmarks([]);
       }
-    } else {
-      setBookmarks([]);
     }
   };
 
-  const removeBookmark = async (e: React.MouseEvent, login: string) => {
+  const removeBookmark = (e: React.MouseEvent, login: string) => {
     e.stopPropagation();
     const updated = bookmarks.filter(b => b.login !== login);
+    localStorage.setItem('github-bookmarks', JSON.stringify(updated));
     setBookmarks(updated);
-    
-    if (user) {
-      try {
-        await fetch(`/api/bookmarks/${login}`, { method: 'DELETE', headers: getHeaders() });
-      } catch (err) {
-        console.error('Failed to delete bookmark on server');
-      }
-    } else {
-      localStorage.setItem('github-bookmarks', JSON.stringify(updated));
-    }
   };
 
   const handleDragStart = (index: number) => {
@@ -78,7 +41,7 @@ export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
     setDragOverItemIndex(index);
   };
 
-  const handleDragEnd = async () => {
+  const handleDragEnd = () => {
     if (draggedItemIndex !== null && dragOverItemIndex !== null && draggedItemIndex !== dragOverItemIndex) {
       const newBookmarks = [...bookmarks];
       const draggedItem = newBookmarks[draggedItemIndex];
@@ -86,20 +49,7 @@ export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
       newBookmarks.splice(dragOverItemIndex, 0, draggedItem);
       
       setBookmarks(newBookmarks);
-      
-      if (user) {
-        try {
-          await fetch('/api/bookmarks', {
-            method: 'PUT',
-            headers: getHeaders(),
-            body: JSON.stringify({ bookmarks: newBookmarks })
-          });
-        } catch (e) {
-          console.error("Failed to reorder bookmarks on server");
-        }
-      } else {
-        localStorage.setItem('github-bookmarks', JSON.stringify(newBookmarks));
-      }
+      localStorage.setItem('github-bookmarks', JSON.stringify(newBookmarks));
     }
     setDraggedItemIndex(null);
     setDragOverItemIndex(null);

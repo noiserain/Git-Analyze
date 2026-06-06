@@ -1,44 +1,15 @@
 import { useState, useEffect } from 'react';
-import { GitHubUser, AuthUser } from '../types';
+import { GitHubUser } from '../types';
 import { MapPin, Link as LinkIcon, Building, Calendar, Bookmark } from 'lucide-react';
 
 interface ProfileProps {
   user: GitHubUser;
-  authUser: AuthUser | null;
 }
 
-export function Profile({ user, authUser }: ProfileProps) {
+export function Profile({ user }: ProfileProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-    checkBookmarkState();
-  }, [user.login, authUser]);
-
-  const getHeaders = () => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  };
-
-  const checkBookmarkState = async () => {
-    if (authUser) {
-      try {
-        const res = await fetch('/api/bookmarks', { headers: getHeaders() });
-        if (res.ok) {
-          const bookmarks = await res.json();
-          setIsBookmarked(bookmarks.some((b: GitHubUser) => b.login === user.login));
-          return;
-        }
-      } catch (e) {
-        // Fallback to localstorage below
-      }
-    }
-    
     const saved = localStorage.getItem('github-bookmarks');
     if (saved) {
       try {
@@ -48,56 +19,31 @@ export function Profile({ user, authUser }: ProfileProps) {
         // ignore parse error
       }
     }
-  };
+  }, [user.login]);
 
-  const toggleBookmark = async () => {
-    const isNowBookmarked = !isBookmarked;
-    setIsBookmarked(isNowBookmarked);
-    
-    if (authUser) {
-      if (isNowBookmarked) {
-        try {
-          await fetch('/api/bookmarks', {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify({
-              bookmark: {
-                login: user.login,
-                name: user.name,
-                avatar_url: user.avatar_url
-              }
-            })
-          });
-        } catch (e) { console.error(e); }
-      } else {
-        try {
-          await fetch(`/api/bookmarks/${user.login}`, { method: 'DELETE', headers: getHeaders() });
-        } catch (e) { console.error(e); }
-      }
-    }
-    
-    // Also save to local storage
+  const toggleBookmark = () => {
     const saved = localStorage.getItem('github-bookmarks');
-    let localBookmarks = [];
+    let bookmarks = [];
     if (saved) {
       try {
-        localBookmarks = JSON.parse(saved);
+        bookmarks = JSON.parse(saved);
       } catch (e) {
-        localBookmarks = [];
+        bookmarks = [];
       }
     }
     
-    if (!isNowBookmarked) {
-      localBookmarks = localBookmarks.filter((b: GitHubUser) => b.login !== user.login);
+    if (isBookmarked) {
+      bookmarks = bookmarks.filter((b: GitHubUser) => b.login !== user.login);
     } else {
-      localBookmarks.push({
+      bookmarks.push({
         login: user.login,
         name: user.name,
         avatar_url: user.avatar_url
       });
     }
     
-    localStorage.setItem('github-bookmarks', JSON.stringify(localBookmarks));
+    localStorage.setItem('github-bookmarks', JSON.stringify(bookmarks));
+    setIsBookmarked(!isBookmarked);
   };
 
   const joinDate = new Date(user.created_at).toLocaleDateString('ko-KR', {

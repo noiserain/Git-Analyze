@@ -6,65 +6,19 @@ import { LanguageChart } from './components/LanguageChart';
 import { RepoModal } from './components/RepoModal';
 import { FamousUsers } from './components/FamousUsers';
 import { BookmarkedUsers } from './components/BookmarkedUsers';
-import { Login } from './components/Login';
 import { fetchGitHubUser, fetchGitHubRepos } from './lib/github';
-import { GitHubUser, GitHubRepo, AuthUser } from './types';
+import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState<GitHubUser | null>(null);
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'bookmarks' | 'login'>('home');
-
-  // Check auth status on mount
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        setAuthUser(null);
-        return;
-      }
-      const res = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAuthUser(data);
-        if (currentView === 'login') {
-          setCurrentView('home');
-        }
-      } else {
-        setAuthUser(null);
-        localStorage.removeItem('auth_token');
-      }
-    } catch {
-      setAuthUser(null);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      localStorage.removeItem('auth_token');
-      setAuthUser(null);
-      if (currentView === 'bookmarks') {
-        setCurrentView('home');
-      }
-    } catch (e) {
-      console.error('Logout failed', e);
-    }
-  };
+  const [currentView, setCurrentView] = useState<'home' | 'bookmarks'>('home');
 
   // Initialize theme based on system preference
   useEffect(() => {
@@ -133,18 +87,11 @@ export default function App() {
         searchTerm={headerSearchTerm}
         setSearchTerm={setHeaderSearchTerm}
         onViewChange={setCurrentView}
-        user={authUser}
-        onLogout={handleLogout}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {currentView === 'login' ? (
-          <Login onLoginSuccess={() => {
-            checkAuth();
-            setCurrentView('home');
-          }} />
-        ) : currentView === 'bookmarks' ? (
-          <BookmarkedUsers onSelectUser={handleSearch} user={authUser} />
+        {currentView === 'bookmarks' ? (
+          <BookmarkedUsers onSelectUser={handleSearch} />
         ) : (
           <>
         {isLoading && (
@@ -180,7 +127,7 @@ export default function App() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Dashboard Overview</h1>
             </div>
             <section>
-              <Profile user={user} authUser={authUser} />
+              <Profile user={user} />
             </section>
             
             <div className="flex flex-col lg:flex-row gap-6 items-stretch">
