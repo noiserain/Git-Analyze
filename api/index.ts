@@ -1,8 +1,32 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import os from "os";
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+
+const BOOKMARKS_FILE = path.join(os.tmpdir(), "bookmarks.json");
+
+async function readBookmarks() {
+  try {
+    const fs = await import("fs/promises");
+    const data = await fs.readFile(BOOKMARKS_FILE, "utf-8");
+    return JSON.parse(data);
+  } catch (e) {
+    return {};
+  }
+}
+
+async function writeBookmarks(db: any) {
+  try {
+    const fs = await import("fs/promises");
+    await fs.writeFile(BOOKMARKS_FILE, JSON.stringify(db, null, 2));
+  } catch (e) {
+    console.error("Failed to write bookmarks:", e);
+  }
+}
 
 const GITHUB_API_URL = 'https://api.github.com';
 
@@ -64,7 +88,30 @@ app.get('/api/github/users/:username/repos', async (req, res) => {
   }
 });
 
-export default app;
+app.get("/api/bookmarks/:username", async (req, res) => {
+  try {
+    const username = req.params.username;
+    const db = await readBookmarks();
+    res.json(db[username] || []);
+  } catch (e: any) {
+    console.error("bookmarks GET err:", e);
+    res.status(500).json({ error: e.message || "Internal error" });
+  }
+});
+
+app.post("/api/bookmarks/:username", async (req, res) => {
+  try {
+    const username = req.params.username;
+    const { bookmarks } = req.body;
+    const db = await readBookmarks();
+    db[username] = bookmarks || [];
+    await writeBookmarks(db);
+    res.json({ success: true });
+  } catch (e: any) {
+    console.error("bookmarks POST err:", e);
+    res.status(500).json({ error: e.message || "Internal error" });
+  }
+});
 
 app.get('/api/auth/url', (req, res) => {
   const protocol = req.headers['x-forwarded-proto'] || 'https';
@@ -121,3 +168,5 @@ app.get('/api/auth/callback', async (req, res) => {
     res.status(500).send('Authentication failed');
   }
 });
+
+export default app;
