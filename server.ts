@@ -20,6 +20,9 @@ async function startServer() {
   
   // OAuth Implementation
   const getRedirectUri = (req: any) => {
+    if (process.env.CALLBACK_URL) {
+      return process.env.CALLBACK_URL; // Allows explicit override 
+    }
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.headers.host || `localhost:${PORT}`;
     return `${protocol}://${host}/auth/callback`;
@@ -41,7 +44,14 @@ async function startServer() {
     const { code } = req.query;
     
     if (!code) {
-      return res.status(400).send("No code provided");
+      return res.send(`
+        <html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', error: 'No code provided' }, '*');
+            window.close();
+          }
+        </script></body></html>
+      `);
     }
 
     try {
@@ -107,11 +117,15 @@ async function startServer() {
       `);
     } catch (e: any) {
       console.error('OAuth error:', e);
-      res.status(500).send(`
-        <html><body>
-          <h2>Authentication failed</h2>
-          <p>${e.message || String(e)}</p>
-        </body></html>
+      res.send(`
+        <html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', error: \`${e.message || String(e)}\` }, '*');
+            window.close();
+          } else {
+            document.write('Authentication failed: ${e.message}');
+          }
+        </script></body></html>
       `);
     }
   });
@@ -148,9 +162,18 @@ async function startServer() {
 
   app.get('/api/github/users/:username', async (req, res) => {
     try {
+      let githubToken = process.env.GITHUB_TOKEN;
+      const authToken = extractToken(req);
+      if (authToken) {
+        try {
+          const decoded = jwt.verify(authToken, JWT_SECRET) as any;
+          if (decoded.access_token) githubToken = decoded.access_token;
+        } catch(e){}
+      }
+      
       const headers: Record<string, string> = {};
-      if (process.env.GITHUB_TOKEN) {
-        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      if (githubToken) {
+        headers['Authorization'] = `token ${githubToken}`;
       } else {
         console.warn("GITHUB_TOKEN is not set in environment.");
       }
@@ -179,9 +202,18 @@ async function startServer() {
 
   app.get('/api/github/users/:username/repos', async (req, res) => {
     try {
+      let githubToken = process.env.GITHUB_TOKEN;
+      const authToken = extractToken(req);
+      if (authToken) {
+        try {
+          const decoded = jwt.verify(authToken, JWT_SECRET) as any;
+          if (decoded.access_token) githubToken = decoded.access_token;
+        } catch(e){}
+      }
+      
       const headers: Record<string, string> = {};
-      if (process.env.GITHUB_TOKEN) {
-        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      if (githubToken) {
+        headers['Authorization'] = `token ${githubToken}`;
       }
       
       const { username } = req.params;

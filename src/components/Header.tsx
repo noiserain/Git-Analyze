@@ -96,58 +96,58 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
           </button>
         </div>
         <div className="p-4 space-y-2">
-          {user ? (
-            <>
-              <div className="flex items-center gap-3 p-3 mb-2 rounded-md bg-gray-50 dark:bg-[#161b22]">
-                <img src={user.avatar_url} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200 dark:border-[#30363d]" />
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">{user.name || user.login}</span>
-                  <span className="text-xs text-gray-500 dark:text-slate-400">@{user.login}</span>
+          <button
+            onClick={toggleDarkMode}
+            className="flex items-center gap-3 w-full p-3 mb-2 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
+          >
+            {isDarkMode ? <Sun className="w-4 h-4 text-gray-500 dark:text-slate-400" /> : <Moon className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
+            {isDarkMode ? '라이트 모드' : '다크 모드'}
+          </button>
+          
+          <button
+            className="flex items-center gap-3 w-full p-3 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
+            onClick={() => {
+              onViewChange('bookmarks');
+              setIsMenuOpen(false);
+            }}
+          >
+            <Bookmark className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+            보관함
+          </button>
+
+          <div className="pt-2 mt-2 border-t border-gray-200 dark:border-[#30363d]">
+            {user ? (
+              <>
+                <div className="flex items-center gap-3 p-3 mb-2 rounded-md bg-gray-50 dark:bg-[#161b22]">
+                  <img src={user.avatar_url} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200 dark:border-[#30363d]" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{user.name || user.login}</span>
+                    <span className="text-xs text-gray-500 dark:text-slate-400">@{user.login}</span>
+                  </div>
                 </div>
-              </div>
+                <button
+                  className="flex items-center gap-3 w-full p-3 rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
+                  onClick={() => {
+                    onLogout();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  로그아웃
+                </button>
+              </>
+            ) : (
               <button
-                className="flex items-center gap-3 w-full p-3 rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
+                className="flex items-center gap-3 w-full p-3 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
                 onClick={() => {
-                  onLogout();
+                  onViewChange('login');
                   setIsMenuOpen(false);
                 }}
               >
-                <LogOut className="w-4 h-4" />
-                로그아웃
+                <LogIn className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+                로그인
               </button>
-            </>
-          ) : (
-            <button
-              className="flex items-center gap-3 w-full p-3 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
-              onClick={() => {
-                onViewChange('login');
-                setIsMenuOpen(false);
-              }}
-            >
-              <LogIn className="w-4 h-4 text-gray-500 dark:text-slate-400" />
-              로그인
-            </button>
-          )}
-
-          <div className="pt-2 mt-2 border-t border-gray-200 dark:border-[#30363d]">
-            <button
-              onClick={toggleDarkMode}
-              className="flex items-center gap-3 w-full p-3 mb-2 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 text-gray-500 dark:text-slate-400" /> : <Moon className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
-              {isDarkMode ? '라이트 모드' : '다크 모드'}
-            </button>
-            
-            <button
-              className="flex items-center gap-3 w-full p-3 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
-              onClick={() => {
-                onViewChange('bookmarks');
-                setIsMenuOpen(false);
-              }}
-            >
-              <Bookmark className="w-4 h-4 text-gray-500 dark:text-slate-400" />
-              보관함
-            </button>
+            )}
           </div>
         </div>
       </div>

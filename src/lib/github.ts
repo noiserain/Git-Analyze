@@ -3,7 +3,12 @@ import { GitHubUser, GitHubRepo } from '../types';
 const GITHUB_API_URL = '/api/github';
 
 export async function fetchGitHubUser(username: string): Promise<GitHubUser> {
-  const response = await fetch(`${GITHUB_API_URL}/users/${username}`);
+  const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const response = await fetch(`${GITHUB_API_URL}/users/${username}`, { headers });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || '데이터를 불러오는데 실패했습니다.');
@@ -18,7 +23,12 @@ export async function fetchGitHubRepos(username: string): Promise<GitHubRepo[]> 
   let hasMore = true;
 
   while (hasMore) {
-    const response = await fetch(`${GITHUB_API_URL}/users/${username}/repos?per_page=${perPage}&page=${page}&sort=updated`);
+    const token = localStorage.getItem('auth_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${GITHUB_API_URL}/users/${username}/repos?per_page=${perPage}&page=${page}&sort=updated`, { headers });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || '저장소 데이터를 불러오는데 실패했습니다.');

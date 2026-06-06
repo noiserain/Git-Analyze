@@ -21,6 +21,9 @@ export function Login({ onLoginSuccess }: LoginProps) {
         }
         setIsLoggingIn(false);
         onLoginSuccess();
+      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+        setError(`로그인 실패: ${event.data.error}`);
+        setIsLoggingIn(false);
       }
     };
     window.addEventListener('message', handleMessage);
