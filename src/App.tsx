@@ -6,6 +6,7 @@ import { LanguageChart } from './components/LanguageChart';
 import { RepoModal } from './components/RepoModal';
 import { FamousUsers } from './components/FamousUsers';
 import { BookmarkedUsers } from './components/BookmarkedUsers';
+import { LoginView } from './components/LoginView';
 import { fetchGitHubUser, fetchGitHubRepos } from './lib/github';
 import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
@@ -18,7 +19,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'bookmarks'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'bookmarks' | 'login'>('home');
   const [token, setToken] = useState<string | null>(localStorage.getItem('github_token') || null);
 
   useEffect(() => {
@@ -30,16 +31,13 @@ export default function App() {
   }, [token]);
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
-        const receivedToken = event.data.token;
-        if (receivedToken) {
-          setToken(receivedToken);
-        }
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeToken = urlParams.get('token');
+    if (codeToken) {
+      setToken(codeToken);
+      setCurrentView('home');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   // Initialize theme based on system preference
@@ -116,6 +114,8 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {currentView === 'bookmarks' ? (
           <BookmarkedUsers onSelectUser={handleSearch} />
+        ) : currentView === 'login' ? (
+          <LoginView />
         ) : (
           <>
         {isLoading && (

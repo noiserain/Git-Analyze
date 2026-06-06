@@ -110,21 +110,11 @@ async function startServer() {
       const tokenData = await tokenResponse.json();
       const accessToken = tokenData.access_token;
 
-      res.send(`
-        <html>
-          <body>
-            <script>
-              if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', token: '${accessToken}' }, '*');
-                window.close();
-              } else {
-                window.location.href = '/';
-              }
-            </script>
-            <p>로그인 성공. 창이 자동으로 닫힙니다.</p>
-          </body>
-        </html>
-      `);
+      if (!accessToken) {
+        return res.status(401).send('Failed to obtain token');
+      }
+
+      res.redirect(`/?token=${accessToken}`);
     } catch (error) {
       console.error('Error exchanging token:', error);
       res.status(500).send('Authentication failed');

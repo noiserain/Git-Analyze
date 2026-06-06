@@ -9,7 +9,7 @@ interface HeaderProps {
   isLoading: boolean;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  onViewChange: (view: 'home' | 'bookmarks') => void;
+  onViewChange: (view: 'home' | 'bookmarks' | 'login') => void;
   token?: string | null;
   setToken?: (token: string | null) => void;
 }
@@ -113,16 +113,9 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
             </button>
           ) : (
             <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/auth/url');
-                  if (!response.ok) throw new Error('Failed to fetch auth url');
-                  const { url } = await response.json();
-                  window.open(url, 'oauth_popup', 'width=600,height=700');
-                } catch (e) {
-                  console.error(e);
-                  alert("로그인 URL을 가져오는데 실패했습니다.");
-                }
+              onClick={() => {
+                onViewChange?.('login');
+                setIsMenuOpen(false);
               }}
               className="flex items-center gap-3 w-full p-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors text-sm font-bold shadow-md"
             >
