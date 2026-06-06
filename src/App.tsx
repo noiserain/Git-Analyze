@@ -19,6 +19,28 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState<'home' | 'bookmarks'>('home');
+  const [token, setToken] = useState<string | null>(localStorage.getItem('github_token') || null);
+
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('github_token', token);
+    } else {
+      localStorage.removeItem('github_token');
+    }
+  }, [token]);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        const receivedToken = event.data.token;
+        if (receivedToken) {
+          setToken(receivedToken);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Initialize theme based on system preference
   useEffect(() => {
@@ -45,8 +67,8 @@ export default function App() {
     setHeaderSearchTerm(username); // Sync the search input
     try {
       const [fetchedUser, fetchedRepos] = await Promise.all([
-        fetchGitHubUser(username),
-        fetchGitHubRepos(username)
+        fetchGitHubUser(username, token),
+        fetchGitHubRepos(username, token)
       ]);
       setUser(fetchedUser);
       setRepos(fetchedRepos);
@@ -87,6 +109,8 @@ export default function App() {
         searchTerm={headerSearchTerm}
         setSearchTerm={setHeaderSearchTerm}
         onViewChange={setCurrentView}
+        token={token}
+        setToken={setToken}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">

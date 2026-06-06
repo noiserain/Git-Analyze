@@ -16,7 +16,9 @@ async function startServer() {
   app.get('/api/github/users/:username', async (req, res) => {
     try {
       const headers: Record<string, string> = {};
-      if (process.env.GITHUB_TOKEN) {
+      if (req.headers.authorization) {
+        headers['Authorization'] = req.headers.authorization;
+      } else if (process.env.GITHUB_TOKEN) {
         headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
       }
       
@@ -43,7 +45,9 @@ async function startServer() {
   app.get('/api/github/users/:username/repos', async (req, res) => {
     try {
       const headers: Record<string, string> = {};
-      if (process.env.GITHUB_TOKEN) {
+      if (req.headers.authorization) {
+        headers['Authorization'] = req.headers.authorization;
+      } else if (process.env.GITHUB_TOKEN) {
         headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
       }
       
@@ -64,6 +68,66 @@ async function startServer() {
       res.json(data);
     } catch (e) {
       res.status(500).json({ error: "서버 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  app.get('/api/auth/url', (req, res) => {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const redirectUri = `${protocol}://${host}/api/auth/callback`;
+  
+    const params = new URLSearchParams({
+      client_id: process.env.GITHUB_CLIENT_ID || 'dummy_client_id_for_testing',
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'repo user',
+    });
+  
+    const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
+    res.json({ url: authUrl });
+  });
+
+  app.get('/api/auth/callback', async (req, res) => {
+    const code = req.query.code as string;
+    if (!code) {
+      return res.status(400).send('Missing code');
+    }
+
+    try {
+      const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: process.env.GITHUB_CLIENT_ID,
+          client_secret: process.env.GITHUB_CLIENT_SECRET,
+          code,
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
+      const accessToken = tokenData.access_token;
+
+      res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', token: '${accessToken}' }, '*');
+                window.close();
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+            <p>로그인 성공. 창이 자동으로 닫힙니다.</p>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error exchanging token:', error);
+      res.status(500).send('Authentication failed');
     }
   });
 

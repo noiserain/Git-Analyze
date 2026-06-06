@@ -10,9 +10,11 @@ interface HeaderProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   onViewChange: (view: 'home' | 'bookmarks') => void;
+  token?: string | null;
+  setToken?: (token: string | null) => void;
 }
 
-export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading, searchTerm, setSearchTerm, onViewChange }: HeaderProps) {
+export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoading, searchTerm, setSearchTerm, onViewChange, token, setToken }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,6 +100,39 @@ export function Header({ onSearch, onReset, isDarkMode, toggleDarkMode, isLoadin
           </button>
         </div>
         <div className="p-4 space-y-2">
+          {token ? (
+            <button
+              onClick={() => {
+                if (setToken) setToken(null);
+                setIsMenuOpen(false);
+              }}
+              className="flex items-center gap-3 w-full p-3 rounded-md bg-gray-200 dark:bg-[#21262d] hover:bg-gray-300 dark:hover:bg-[#30363d] text-gray-900 dark:text-white transition-colors text-sm font-bold shadow-sm"
+            >
+              <Github className="w-4 h-4 text-gray-900 dark:text-white" />
+              로그아웃
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/auth/url');
+                  if (!response.ok) throw new Error('Failed to fetch auth url');
+                  const { url } = await response.json();
+                  window.open(url, 'oauth_popup', 'width=600,height=700');
+                } catch (e) {
+                  console.error(e);
+                  alert("로그인 URL을 가져오는데 실패했습니다.");
+                }
+              }}
+              className="flex items-center gap-3 w-full p-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors text-sm font-bold shadow-md"
+            >
+              <Github className="w-4 h-4 text-white" />
+              GitHub으로 로그인
+            </button>
+          )}
+          
+          <div className="my-2 border-b border-gray-200 dark:border-[#30363d]"></div>
+
           <button
             onClick={toggleDarkMode}
             className="flex items-center gap-3 w-full p-3 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors text-sm font-medium"
