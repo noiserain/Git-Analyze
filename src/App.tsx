@@ -29,7 +29,16 @@ export default function App() {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setAuthUser(null);
+        return;
+      }
+      const res = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setAuthUser(data);
@@ -38,6 +47,7 @@ export default function App() {
         }
       } else {
         setAuthUser(null);
+        localStorage.removeItem('auth_token');
       }
     } catch {
       setAuthUser(null);
@@ -46,10 +56,10 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('auth_token');
       setAuthUser(null);
       if (currentView === 'bookmarks') {
-        setCurrentView('home'); // or keep local bookmarks? Let's just go home
+        setCurrentView('home');
       }
     } catch (e) {
       console.error('Logout failed', e);

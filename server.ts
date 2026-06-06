@@ -79,6 +79,10 @@ async function startServer() {
       
       const userData = await userRes.json();
       
+      if (!userData.login) {
+         throw new Error("GitHub payload is invalid: " + JSON.stringify(userData));
+      }
+
       // Create session
       const token = jwt.sign(
         { login: userData.login, name: userData.name, avatar_url: userData.avatar_url, access_token: accessToken },
@@ -86,36 +90,42 @@ async function startServer() {
         { expiresIn: '7d' }
       );
       
-      res.cookie('auth_token', token, {
-        secure: true,
-        sameSite: 'none',
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-
       res.send(`
         <html>
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', user: ${JSON.stringify({ login: userData.login, name: userData.name, avatar_url: userData.avatar_url })} }, '*');
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', token: '${token}', user: ${JSON.stringify({ login: userData.login, name: userData.name, avatar_url: userData.avatar_url })} }, '*');
                 window.close();
               } else {
-                window.location.href = '/';
+                document.write('Authentication successful, but could not find original window.');
               }
             </script>
             <p>Authentication successful. This window should close automatically.</p>
           </body>
         </html>
       `);
-    } catch (e) {
+    } catch (e: any) {
       console.error('OAuth error:', e);
-      res.status(500).send("Authentication failed");
+      res.status(500).send(`
+        <html><body>
+          <h2>Authentication failed</h2>
+          <p>${e.message || String(e)}</p>
+        </body></html>
+      `);
     }
   });
 
+  const extractToken = (req: express.Request) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.substring(7);
+    }
+    return req.cookies?.auth_token; // Fallback
+  };
+
   app.get('/api/auth/me', (req, res) => {
-    const token = req.cookies.auth_token;
+    const token = extractToken(req);
     if (!token) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -133,11 +143,6 @@ async function startServer() {
   });
 
   app.post('/api/auth/logout', (req, res) => {
-    res.clearCookie('auth_token', {
-      secure: true,
-      sameSite: 'none',
-      httpOnly: true,
-    });
     res.json({ success: true });
   });
 
@@ -146,25 +151,29 @@ async function startServer() {
       const headers: Record<string, string> = {};
       if (process.env.GITHUB_TOKEN) {
         headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      } else {
+        console.warn("GITHUB_TOKEN is not set in environment.");
       }
       
       const { username } = req.params;
       const response = await fetch(`${GITHUB_API_URL}/users/${username}`, { headers });
       
       if (!response.ok) {
+        let errData;
+        try { errData = await response.json(); } catch(e){}
         if (response.status === 404) {
-          return res.status(404).json({ error: "해당 유저를 찾을 수 없습니다!" });
+          return res.status(404).json({ error: "해당 유저를 찾을 수 없습니다!", details: errData });
         }
-        if (response.status === 403) {
-          return res.status(403).json({ error: "GitHub API 일일 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요." });
+        if (response.status === 403 || response.status === 401) {
+          return res.status(response.status).json({ error: "GitHub API 권한 오류 또는 일일 요청 한도 초과입니다. GitHub Token을 확인해주세요.", details: errData });
         }
-        return res.status(500).json({ error: "데이터를 불러오는데 실패했습니다." });
+        return res.status(500).json({ error: "데이터를 불러오는데 실패했습니다.", details: errData });
       }
       
       const data = await response.json();
       res.json(data);
-    } catch (e) {
-      res.status(500).json({ error: "서버 처리 중 오류가 발생했습니다." });
+    } catch (e: any) {
+      res.status(500).json({ error: "서버 처리 중 오류가 발생했습니다.", details: e.message });
     }
   });
 
@@ -182,16 +191,18 @@ async function startServer() {
       const response = await fetch(`${GITHUB_API_URL}/users/${username}/repos?per_page=${perPage}&page=${page}&sort=updated`, { headers });
       
       if (!response.ok) {
-        if (response.status === 403) {
-          return res.status(403).json({ error: "GitHub API 일일 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요." });
+        let errData;
+        try { errData = await response.json(); } catch(e){}
+        if (response.status === 403 || response.status === 401) {
+          return res.status(response.status).json({ error: "GitHub API 권한 오류 또는 일일 요청 한도 초과입니다.", details: errData });
         }
-        return res.status(500).json({ error: "저장소 데이터를 불러오는데 실패했습니다." });
+        return res.status(500).json({ error: "저장소 데이터를 불러오는데 실패했습니다.", details: errData });
       }
       
       const data = await response.json();
       res.json(data);
-    } catch (e) {
-      res.status(500).json({ error: "서버 처리 중 오류가 발생했습니다." });
+    } catch (e: any) {
+      res.status(500).json({ error: "서버 처리 중 오류가 발생했습니다.", details: e.message });
     }
   });
 
@@ -199,7 +210,7 @@ async function startServer() {
   const userBookmarks = new Map<string, any[]>();
 
   app.get('/api/bookmarks', (req, res) => {
-    const token = req.cookies.auth_token;
+    const token = extractToken(req);
     if (!token) return res.status(401).json({ error: "Not authenticated" });
     
     try {
@@ -212,7 +223,7 @@ async function startServer() {
   });
 
   app.post('/api/bookmarks', (req, res) => {
-    const token = req.cookies.auth_token;
+    const token = extractToken(req);
     if (!token) return res.status(401).json({ error: "Not authenticated" });
     
     try {
@@ -232,7 +243,7 @@ async function startServer() {
   });
 
   app.delete('/api/bookmarks/:username', (req, res) => {
-    const token = req.cookies.auth_token;
+    const token = extractToken(req);
     if (!token) return res.status(401).json({ error: "Not authenticated" });
     
     try {
@@ -249,7 +260,7 @@ async function startServer() {
   });
 
   app.put('/api/bookmarks', (req, res) => {
-    const token = req.cookies.auth_token;
+    const token = extractToken(req);
     if (!token) return res.status(401).json({ error: "Not authenticated" });
     
     try {

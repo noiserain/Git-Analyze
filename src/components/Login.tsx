@@ -16,6 +16,9 @@ export function Login({ onLoginSuccess }: LoginProps) {
         return;
       }
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        if (event.data.token) {
+          localStorage.setItem('auth_token', event.data.token);
+        }
         setIsLoggingIn(false);
         onLoginSuccess();
       }

@@ -16,10 +16,21 @@ export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
     loadBookmarks();
   }, [user]);
 
+  const getHeaders = () => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const loadBookmarks = async () => {
     if (user) {
       try {
-        const res = await fetch('/api/bookmarks');
+        const res = await fetch('/api/bookmarks', { headers: getHeaders() });
         if (res.ok) {
           const data = await res.json();
           setBookmarks(data);
@@ -50,7 +61,7 @@ export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
     
     if (user) {
       try {
-        await fetch(`/api/bookmarks/${login}`, { method: 'DELETE' });
+        await fetch(`/api/bookmarks/${login}`, { method: 'DELETE', headers: getHeaders() });
       } catch (err) {
         console.error('Failed to delete bookmark on server');
       }
@@ -80,7 +91,7 @@ export function BookmarkedUsers({ onSelectUser, user }: BookmarkedUsersProps) {
         try {
           await fetch('/api/bookmarks', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(),
             body: JSON.stringify({ bookmarks: newBookmarks })
           });
         } catch (e) {

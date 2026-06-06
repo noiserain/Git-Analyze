@@ -14,10 +14,21 @@ export function Profile({ user, authUser }: ProfileProps) {
     checkBookmarkState();
   }, [user.login, authUser]);
 
+  const getHeaders = () => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const checkBookmarkState = async () => {
     if (authUser) {
       try {
-        const res = await fetch('/api/bookmarks');
+        const res = await fetch('/api/bookmarks', { headers: getHeaders() });
         if (res.ok) {
           const bookmarks = await res.json();
           setIsBookmarked(bookmarks.some((b: GitHubUser) => b.login === user.login));
@@ -48,7 +59,7 @@ export function Profile({ user, authUser }: ProfileProps) {
         try {
           await fetch('/api/bookmarks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders(),
             body: JSON.stringify({
               bookmark: {
                 login: user.login,
@@ -60,7 +71,7 @@ export function Profile({ user, authUser }: ProfileProps) {
         } catch (e) { console.error(e); }
       } else {
         try {
-          await fetch(`/api/bookmarks/${user.login}`, { method: 'DELETE' });
+          await fetch(`/api/bookmarks/${user.login}`, { method: 'DELETE', headers: getHeaders() });
         } catch (e) { console.error(e); }
       }
     }
