@@ -12,16 +12,35 @@ import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function App() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('github_theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const [user, setUser] = useState<GitHubUser | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [headerSearchTerm, setHeaderSearchTerm] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'bookmarks' | 'login'>('home');
+  const [headerSearchTerm, setHeaderSearchTerm] = useState(localStorage.getItem('github_last_searched') || '');
+  const [currentView, setCurrentView] = useState<'home' | 'bookmarks' | 'login'>(
+    (localStorage.getItem('github_current_view') as any) || 'home'
+  );
   const [token, setToken] = useState<string | null>(localStorage.getItem('github_token') || null);
   const [currentUser, setCurrentUser] = useState<GitHubUser | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('github_current_view', currentView);
+  }, [currentView]);
+
+  useEffect(() => {
+    const lastSearched = localStorage.getItem('github_last_searched');
+    if (lastSearched && currentView === 'home') {
+      handleSearch(lastSearched);
+    }
+  }, []); // Run only once on mount
 
   useEffect(() => {
     if (token) {
@@ -48,19 +67,14 @@ export default function App() {
     }
   }, []);
 
-  // Initialize theme based on system preference
-  useEffect(() => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
-    }
-  }, []);
-
   // Update DOM class when theme changes
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('github_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('github_theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -71,6 +85,7 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     setHeaderSearchTerm(username); // Sync the search input
+    localStorage.setItem('github_last_searched', username);
     try {
       const [fetchedUser, fetchedRepos] = await Promise.all([
         fetchGitHubUser(username, token),
@@ -93,6 +108,7 @@ export default function App() {
     setError(null);
     setHeaderSearchTerm('');
     setCurrentView('home');
+    localStorage.removeItem('github_last_searched');
   };
 
   const topRepos = useMemo(() => {
