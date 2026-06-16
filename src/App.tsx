@@ -7,6 +7,7 @@ import { RepoModal } from './components/RepoModal';
 import { FamousUsers } from './components/FamousUsers';
 import { BookmarkedUsers } from './components/BookmarkedUsers';
 import { LoginView } from './components/LoginView';
+import { GithubEasterEgg } from './components/GithubEasterEgg';
 import { fetchGitHubUser, fetchGitHubRepos, fetchCurrentUser } from './lib/github';
 import { GitHubUser, GitHubRepo } from './types';
 import { Github, AlertCircle, Loader2 } from 'lucide-react';
@@ -159,9 +160,7 @@ export default function App() {
 
         {!isLoading && !error && !user && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="bg-gray-50 dark:bg-[#0d1117] border border-gray-200 dark:border-[#30363d] p-6 rounded-full mb-6 relative overflow-hidden group hover:border-gray-400 dark:hover:border-[#8b949e] transition-colors">
-              <Github className="w-12 h-12 text-gray-400 dark:text-slate-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors relative z-10" />
-            </div>
+            <GithubEasterEgg />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">GitHub 유저를 검색해보세요!</h2>
             <p className="text-gray-500 dark:text-slate-400 max-w-md text-sm leading-relaxed mb-4">
               상단 검색창에 확인하고 싶은 개발자의 깃허브 아이디를 입력하시면, <br/>활동 데이터와 주력 언어를 분석해드립니다.
